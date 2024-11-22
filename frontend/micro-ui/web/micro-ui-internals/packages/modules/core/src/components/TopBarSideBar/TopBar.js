@@ -101,7 +101,7 @@ const TopBar = ({
   return (
     <div className="topbar">
       {mobileView ? <Hamburger handleClick={toggleSidebar} color="#9E9E9E" /> : null}
-      <img className="city" src={loggedin ? cityDetails?.logoId : stateInfo?.statelogo} />
+      { !window.location.href.includes("employee/dss/dashboard/ifix") && <img className="city" src={loggedin ? cityDetails?.logoId : stateInfo?.statelogo} />}
       <span style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
         {loggedin &&
           (cityDetails?.city?.ulbGrade ? (
@@ -112,15 +112,19 @@ const TopBar = ({
           ) : (
             <img className="state" src={logoUrl} />
           ))}
-        {!loggedin && (
+        {!loggedin && !window.location.href.includes("employee/dss/dashboard/ifix") ? (
           <p className="ulb" style={mobileView ? { fontSize: "14px", display: "inline-block" } : {}}>
             {t(`MYCITY_${stateInfo?.code?.toUpperCase()}_LABEL`)} {t(`MYCITY_STATECODE_LABEL`)}
+          </p>
+         ) : (
+          <p className="ulb" style={mobileView ? { fontSize: "14px", display: "inline-block" } : { fontSize: "20px"}}>
+            {t(`DSS_IFIX_DASHBOARD_TOP_BAR`)}
           </p>
         )}
         {!mobileView && (
           <div className={mobileView ? "right" : "flex-right right w-80 column-gap-15"} style={!loggedin ? { width: "80%" } : {}}>
             <div className="left">
-              {!window.location.href.includes("employee/user/login") && !window.location.href.includes("employee/user/language-selection") && (
+            {!window.location.href.includes("employee/user/login") && !window.location.href.includes("employee/user/language-selection") && !window.location.href.includes("employee/dss/dashboard/ifix") && (
                 <ChangeCity dropdown={true} t={t} />
               )}
             </div>

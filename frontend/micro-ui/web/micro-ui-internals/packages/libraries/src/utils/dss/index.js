@@ -5,11 +5,11 @@ const amountFormatter = (value, denomination, t) => {
 
   switch (denomination) {
     case "Lac":
-      return `₹ ${currencyFormatter.format((value / 100000).toFixed(2) || 0)} ${t("ES_DSS_LAC")}`;
+      return `₹ ${currencyFormatter.format(parseFloat((value / 100000).toFixed(2)) || 0)} ${t("ES_DSS_LAC")}`;
     case "Cr":
-      return `₹ ${currencyFormatter.format((value / 10000000).toFixed(2) || 0)} ${t("ES_DSS_CR")}`;
+      return `₹ ${currencyFormatter.format(parseFloat((value / 10000000).toFixed(2)) || 0)} ${t("ES_DSS_CR")}`;
     case "Unit":
-      return `₹ ${currencyFormatter.format(value?.toFixed(2) || 0)}`;
+      return `₹ ${currencyFormatter.format(parseFloat(value?.toFixed(2)) || 0)}`;
     default:
       return "";
   }
@@ -28,7 +28,9 @@ export const formatter = (value, symbol, unit, commaSeparated = true, t) => {
         return parseInt(value);
       }
       const Nformatter = new Intl.NumberFormat("en-IN");
-      return Nformatter.format(Math.round(value));
+      // Commenting round because it doesn't give exact value, should display decimal upto 2 places
+      // return Nformatter.format(Math.round(value));
+      return Nformatter.format(value);
     case "percentage":
       const Pformatter = new Intl.NumberFormat("en-IN", { maximumSignificantDigits: 3 });
       return `${Pformatter.format(value.toFixed(2))} %`;
@@ -105,3 +107,18 @@ export const getCitiesAvailable = (e, selectedDDRs) => {
     return false;
   }
 };
+
+// Check ifix dashboard from dashboard config
+export const isIFixDashboard = (config) => {
+  return config?.[0]?.name.includes("DSS_IFIX_DASHBOARD") ? true : false;
+}
+
+/**
+ * This is for demo only needs to be remove, funciton which checks the ifix key is exists then it returns the value
+ */
+export const getIfixMapedName = (key)  => {
+  if (key)
+    return JSON.parse(localStorage.getItem("Digit.dss.iFixCodeNameMap") || {})[key] || key;
+  else 
+    return null;
+}

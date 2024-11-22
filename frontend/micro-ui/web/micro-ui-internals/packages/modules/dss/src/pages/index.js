@@ -17,6 +17,7 @@ import { checkCurrentScreen } from "../components/DSSCard";
 import FilterContext from "../components/FilterContext";
 import Filters from "../components/Filters";
 import FiltersNational from "../components/FiltersNational";
+import IfixFilters from "../components/IfixFilters";
 import Layout from "../components/Layout";
 
 const key = "DSS_FILTERS";
@@ -30,14 +31,15 @@ const getInitialRange = () => {
   const denomination = data?.denomination || "Lac";
   const tenantId = data?.filters?.tenantId || [];
   const moduleLevel = data?.moduleLevel || "";
-  return { startDate, endDate, title, interval, denomination, tenantId, moduleLevel };
+  const preFilters = data?.filters || {};
+  return { startDate, endDate, title, interval, denomination, tenantId, moduleLevel, preFilters };
 };
 
 const DashBoard = ({ stateCode }) => {
   const tenantId = Digit.ULBService.getCurrentTenantId();
   const { t } = useTranslation();
   const [filters, setFilters] = useState(() => {
-    const { startDate, endDate, title, interval, denomination, tenantId, moduleLevel } = getInitialRange();
+    const { startDate, endDate, title, interval, denomination, tenantId, moduleLevel, preFilters } = getInitialRange();
     return {
       denomination,
       range: { startDate, endDate, title, interval },
@@ -48,7 +50,8 @@ const DashBoard = ({ stateCode }) => {
         title: title,
       },
       filters: {
-        tenantId,
+        ...preFilters,
+        tenantId
       },
       moduleLevel: moduleLevel
     };
@@ -56,8 +59,14 @@ const DashBoard = ({ stateCode }) => {
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const isNational = checkCurrentScreen();
   const { moduleCode } = useParams();
+  const [department, setDepartment] = useState({});
 
   const language = Digit.StoreData.getCurrentLanguage();
+
+  // For updating the ifix dashboard on title
+  useEffect(() => {
+    document.title = "iFIX Dashboard"
+  }, []);
 
   const { isLoading: localizationLoading, data: store } = Digit.Services.useStore({ stateCode, moduleCode, language });
   const { data: screenConfig, isLoading: isServicesLoading } = Digit.Hooks.dss.useMDMS(stateCode, "dss-dashboard", "DssDashboard", {
@@ -103,7 +112,7 @@ const DashBoard = ({ stateCode }) => {
 
   const { data: response, isLoading } = Digit.Hooks.dss.useDashboardConfig(moduleCode);
   const { data: ulbTenants, isLoading: isUlbLoading } = Digit.Hooks.useModuleTenants("DSS");
-  const { isLoading: isMdmsLoading, data: mdmsData } = Digit.Hooks.useCommonMDMS(stateCode, "FSM", "FSTPPlantInfo");
+  // const { isLoading: isMdmsLoading, data: mdmsData } = Digit.Hooks.useCommonMDMS(stateCode, "FSM", "FSTPPlantInfo");
   const [showOptions, setShowOptions] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [tabState, setTabState] = useState("");
@@ -118,10 +127,9 @@ const DashBoard = ({ stateCode }) => {
       value: filters,
       setValue: handleFilters,
       ulbTenants: isNational ? nationalInfo : ulbTenants,
-      fstpMdmsData: mdmsData,
       screenConfig: screenConfig,
     }),
-    [filters, isUlbLoading, isMdmsLoading, isServicesLoading]
+    [filters, isUlbLoading, isServicesLoading]
   );
 
   const mobileView = window.Digit.Utils.browser.isMobile();
@@ -177,6 +185,26 @@ const DashBoard = ({ stateCode }) => {
     handleFilters({ ...filters, moduleLevel: "" });
   }
 
+  const removeHierarchy = (id) => {
+    let elem = appliedHierarchyChips[id];
+    let appliedFilters= filters?.filters;
+    hierarchyLevels.forEach((hLevel) => {
+      if (hLevel.level == elem.level) appliedFilters[elem.label] = appliedFilters[elem.label].filter((el) => el !== elem.code)
+      else if (hLevel.level > elem.level) delete appliedFilters[hLevel.label];
+    })
+    if (!appliedFilters[elem.label]?.length) delete appliedFilters[elem.label];
+    handleFilters({...filters, filters: { ...appliedFilters }});
+  };
+
+  const clearAllHierarchy = () => {
+    let appliedFilters= filters?.filters;
+    // Remove all filters from hierarchy
+    hierarchyLevels.forEach((hLevel) => {
+      if (hLevel.level) delete appliedFilters[hLevel.label];
+    })
+    handleFilters({...filters, filters: { ...appliedFilters }});
+  };
+
   const dashboardConfig = response?.responseData;
   let tabArrayObj =
     dashboardConfig?.[0]?.visualizations?.reduce((curr, acc) => {
@@ -190,6 +218,82 @@ const DashBoard = ({ stateCode }) => {
       setTabState(tabArray[0]);
     }
   }, [tabArray]);
+
+  let isEnableIFixFilter = !isLoading && Digit.Utils.dss.isIFixDashboard(dashboardConfig);
+  const { data: departments, isLoading: isDeptLoading } = Digit.Hooks.dss.useGetDepartments(stateCode, {
+    enabled: isEnableIFixFilter,
+    select: (data) => {
+      if (data.department) {
+        // let deptList = data.department.filter((dept) => { if (!dept.parent) return dept; });
+        let deptList = data.department;
+        if (filters?.filters?.['Department']) {
+          let idx = deptList.findIndex(p => p.code==filters?.filters?.['Department']);
+          setDepartment(deptList[idx]);
+        } else  {
+          setDepartment(deptList[0]);
+          handleFilters({
+            ...filters,
+            filters: { ...filters?.filters, 'Department': deptList?.[0]?.code },
+          })
+        }
+        return deptList;
+      };
+      return [];
+    },
+  });
+
+  const { data: hierarchyLevels, isLoading: isHierarchyMetaLoading } =  Digit.Hooks.dss.useGetHierarchyMetaData(stateCode, department?.id, {
+    enabled: isEnableIFixFilter && !isDeptLoading && department?.id ? true : false,
+    select: (data) => {
+      if (data.departmentHierarchyLevel) {
+        return _.sortBy(data.departmentHierarchyLevel, 'level')
+      };
+      return [];
+    },
+  });
+
+  const { data: hierarchyList, isLoading: isHierarchyLoading } = Digit.Hooks.dss.useGetHierarchy(stateCode, department?.id, {
+    enabled: isEnableIFixFilter && !isDeptLoading && department?.id ? true : false,
+    select: (data) => {
+      if (data.departmentEntity) {
+        let idValueMap = {};
+        // This is for demo only to represent the data of table with text.
+        data.departmentEntity.forEach((hierarchy) => idValueMap[hierarchy.code] = hierarchy.name)
+        localStorage.setItem("Digit.dss.iFixCodeNameMap", JSON.stringify(idValueMap));
+        return _.sortBy(data.departmentEntity, 'hierarchyLevel')
+      };
+      return [];
+    },
+  });
+
+  const changeDepartment = (e) => {
+    setDepartment(e);
+  }
+
+  const [appliedHierarchyChips, setAppliedHierarchyChips] = useState([]);
+  useEffect(() => {
+    if (filters?.filters && hierarchyLevels?.length && hierarchyList?.length) {
+      let filtersChips = [];
+      hierarchyLevels.forEach((hierarchy) => {
+        let appliedFilterCodes = filters.filters?.[hierarchy.label];
+        if (hierarchy.level && appliedFilterCodes) {
+          let filteredHierarchies = _.filter(hierarchyList, (hierarchyVal) => {return appliedFilterCodes.indexOf(hierarchyVal.code) != -1 && hierarchyVal.hierarchyLevel == hierarchy.level})
+          _.forEach(appliedFilterCodes, (code) => {
+            filtersChips.push({
+              id: hierarchy.id,
+              level: hierarchy.level,
+              label: hierarchy.label,
+              code,
+              name: _.result(_.find(filteredHierarchies, (obj) => { return obj.code === code; }), 'name') || code
+            })
+          })
+        }
+      })
+      setAppliedHierarchyChips(filtersChips);
+    } else {
+      setAppliedHierarchyChips([])
+    }
+  }, [filters?.filters, hierarchyLevels, hierarchyList]);
 
   const shareOptions =
     // navigator.share
@@ -259,7 +363,7 @@ const DashBoard = ({ stateCode }) => {
       },
     ];
 
-  if (isLoading || isUlbLoading || localizationLoading || isMdmsLoading || isLoadingNAT || isServicesLoading) {
+  if (isLoading || isUlbLoading || localizationLoading || isLoadingNAT || isServicesLoading || (isEnableIFixFilter && (isHierarchyLoading || isDeptLoading || isHierarchyMetaLoading))) {
     return <Loader />;
   }
   return (
@@ -267,11 +371,11 @@ const DashBoard = ({ stateCode }) => {
       <div ref={fullPageRef} id="divToPrint">
         <div className="options">
           <Header styles={mobileView ? { marginLeft: "0px", whiteSpace: "pre-line" } : { marginBottom: "0px", whiteSpace: "pre" }}>
-            {t(dashboardConfig?.[0]?.name)}
+            {!isEnableIFixFilter && t(dashboardConfig?.[0]?.name)}
           </Header>
           {mobileView ? null : (
             <div className="divToBeHidden">
-              <div className="mrlg divToBeHidden">
+              {/* <div className="mrlg divToBeHidden">
                 <MultiLink
                   className="multilink-block-wrapper divToBeHidden"
                   label={t(`ES_DSS_SHARE`)}
@@ -285,7 +389,7 @@ const DashBoard = ({ stateCode }) => {
                   displayOptions={showOptions}
                   options={shareOptions}
                 />
-              </div>
+              </div> */}
               <div className="mrsm divToBeHidden" onClick={handlePrint}>
                 <DownloadIcon className="mrsm divToBeHidden" />
                 {t(`ES_DSS_DOWNLOAD`)}
@@ -300,6 +404,20 @@ const DashBoard = ({ stateCode }) => {
             isOpen={isFilterModalOpen}
             closeFilters={() => setIsFilterModalOpen(false)}
             isNational={isNational}
+          />
+        ) : 
+        isEnableIFixFilter ? (
+          <IfixFilters
+            t={t}
+            showModuleFilter={false}
+            services={screenConfig}
+            departments={departments}
+            hierarchyLevels={hierarchyLevels}
+            hierarchyList={hierarchyList}
+            isOpen={isFilterModalOpen}
+            closeFilters={() => setIsFilterModalOpen(false)}
+            showDateRange={true}
+            changeDepartment={changeDepartment}
           />
         ) : (
           <Filters
@@ -434,6 +552,22 @@ const DashBoard = ({ stateCode }) => {
           </div>
         )}
 
+        {appliedHierarchyChips?.length > 0 && (
+          <div className="tag-container">
+            {!showFilters &&
+              appliedHierarchyChips
+                .map((filter, id) => (
+                  <RemoveableTag
+                    key={id}
+                    text={`${t(filter?.label)}: ${t(filter?.name)}`}
+                    onClick={() => removeHierarchy(id)}
+                  />
+                ))}
+            <p className="clearText cursorPointer" onClick={clearAllHierarchy}>
+              {t(`DSS_FILTER_CLEAR`)}
+            </p>
+          </div>
+        )}
         {mobileView ? (
           <div className="options-m">
             <div>
@@ -470,7 +604,7 @@ const DashBoard = ({ stateCode }) => {
             </div>
           )}
         </div>
-        {dashboardConfig?.[0]?.visualizations
+        {(!isEnableIFixFilter || (!isDeptLoading && isEnableIFixFilter)) && dashboardConfig?.[0]?.visualizations
           .filter((row) => row.name === tabState)
           .map((row, key) => {
             return <Layout rowData={row} key={key} />;

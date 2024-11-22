@@ -56,10 +56,13 @@ const Routes = ({ path, stateCode }) => {
   const isMobile = window.Digit.Utils.browser.isMobile();
   return (
     <div className="chart-wrapper" style={isMobile ? {marginTop:"unset"} : {}}>
-      <DssBreadCrumb location={location} />
+      {/* Disabling breadcrumb for dss */}
+      {/* <DssBreadCrumb location={location} /> */}
       <Switch>
         <PrivateRoute path={`${path}/landing/:moduleCode`} component={() => <Home stateCode={stateCode} />} />
-        <PrivateRoute path={`${path}/dashboard/:moduleCode`} component={() => <DashBoard stateCode={stateCode} />} />
+        // Changed from private route to normal route to remove redirection for iFix-dashboard
+        {/* <PrivateRoute path={`${path}/dashboard/:moduleCode`} component={() => <DashBoard stateCode={stateCode} />} /> */}
+        <Route path={`${path}/dashboard/:moduleCode`} component={() => <DashBoard stateCode={stateCode} />} />
         <PrivateRoute path={`${path}/drilldown`} component={() => <DrillDown  stateCode={stateCode}  />} />
         <Route key={"national-faq"} path={`${path}/national-faqs`}>
           <FAQsSection/>

@@ -96,6 +96,9 @@ const Urls = {
   dss: {
     dashboardConfig: "/dashboard-analytics/dashboard/getDashboardConfig",
     getCharts: "/dashboard-analytics/dashboard/getChartV2",
+    search_ifix_dept_master_data: "/adapter-master-data/department/v1/_search",
+    search_ifix_hierarchy_level: "/ifix-department-entity/departmentEntity/hierarchyLevel/v1/_search",
+    search_ifix_dept_entity: "/ifix-department-entity/departmentEntity/v1/_search",
   },
 
   mcollect: {

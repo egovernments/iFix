@@ -42,6 +42,8 @@ const GenericChart = ({
       i18nKey: t("ES_COMMON_DOWNLOAD_IMAGE"),
       icon: <DownloadIcon />,
     },
+    // Disabling share icon
+    /*
     {
       code: "shareImage",
       i18nKey: t("ES_DSS_SHARE_IMAGE"),
@@ -54,6 +56,7 @@ const GenericChart = ({
       target: "whatsapp",
       icon: <WhatsappIcon />,
     },
+    */
   ];
 
   function download(data) {

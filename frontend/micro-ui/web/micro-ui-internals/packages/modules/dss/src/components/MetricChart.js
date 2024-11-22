@@ -96,7 +96,7 @@ const MetricChartRow = ({ data, setChartDenomination, index }) => {
   let name=t(data?.name)||"";
 
   const getWidth = (data) => {
-    if (isMobile) return "auto";
+    if (isMobile || t(`TIP_${data.name}`).length > 30) return "auto";
     else return t(`TIP_${data.name}`).length < 50 ? "fit-content" : 400;
     // if (isMobile) return t(`TIP_${data.name}`).length < 50 ? "fit-content" : 300;
     // else return t(`TIP_${data.name}`).length < 50 ? "fit-content" : 400;
@@ -122,6 +122,7 @@ const MetricChartRow = ({ data, setChartDenomination, index }) => {
             width: getWidth(data),
             height: getHeight(data),
             whiteSpace: "normal",
+            zIndex: 100
           }}
         >
           <span style={{ fontWeight: "500", color: "white" }}>{t(`TIP_${data.name}`)}</span>

@@ -131,8 +131,3 @@ config:
       - work-dir: frontend/micro-ui/
         dockerfile: frontend/micro-ui/web/docker/Dockerfile
         image-name: digit-ui
-  - name: "builds/iFix/reference-adapter/ifms-adapter"
-    build:
-      - work-dir: "reference-adapter/ifms-adapter"
-        image-name: "ifms-adapter"
-        dockerfile: "build/maven/Dockerfile"

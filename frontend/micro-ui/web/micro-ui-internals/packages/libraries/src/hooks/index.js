@@ -45,6 +45,9 @@ import useDashboardConfig from "./dss/useDashboardConfig";
 import useDSSDashboard from "./dss/useDSSDashboard";
 import useGetChart from "./dss/useGetChart";
 import useDssMdms from "./dss/useMDMS";
+import useGetHierarchy from "./dss/useGetHierarchy";
+import useGetHierarchyMetaData from "./dss/useGetHierarchyMetaData";
+import useGetDepartments from "./dss/useGetDepartments";
 
 
 import useHRMSCount from "./hrms/useHRMSCount";
@@ -105,6 +108,9 @@ const dss = {
   useDashboardConfig,
   useDSSDashboard,
   useGetChart,
+  useGetHierarchy,
+  useGetHierarchyMetaData,
+  useGetDepartments
 };
 
 

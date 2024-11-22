@@ -125,9 +125,9 @@ const EmployeeApp = ({
             </div>
           </div>
         </Route>
-        <Route>
+        {/* <Route>
           <Redirect to={`${path}/user/language-selection`} />
-        </Route>
+        </Route> */}
       </Switch>
     </div>
   );

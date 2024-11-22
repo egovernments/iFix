@@ -54,7 +54,9 @@ const TopBarSideBar = ({
         userOptions={userOptions}
         handleUserDropdownSelection={handleUserDropdownSelection}
         logoUrl={logoUrl}
-        showLanguageChange={showLanguageChange}
+        // Commenting language selector for now
+        // showLanguageChange={showLanguageChange}
+        showLanguageChange={false}
       />
       {showDialog && (
         <LogoutDialog onSelect={handleOnSubmit} onCancel={handleOnCancel} onDismiss={handleOnCancel}></LogoutDialog>

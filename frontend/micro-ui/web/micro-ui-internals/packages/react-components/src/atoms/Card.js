@@ -6,7 +6,7 @@ const Card = ({ onClick, style, children, className, ReactRef, ...props }) => {
   const classname = Digit.Hooks.useRouteSubscription(pathname);
   const info = Digit.UserService.getUser()?.info;
   const userType = info?.type;
-  const isEmployee = classname === "employee" || userType === "EMPLOYEE";
+  const isEmployee = classname === "employee" || userType === "EMPLOYEE" || pathname.includes("/digit-ui/employee/");
   
   return (
     <div
